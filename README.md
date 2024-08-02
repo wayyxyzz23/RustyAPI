@@ -1,1 +1,31 @@
-RustyAPI is a lightweight and efficient web server project, built using Rust with the Actix-web framework. This repository contains the source code for initializing the Actix-web application, setting up various routes, and running the server, showcasing how to create scalable and reliable web services with Rust's powerful features and Actix-web's flexible architecture.
+# RustyAPI
+
+RustyAPI is a RESTful API service built with Rust using the Actix-web framework. The API provides endpoints for creating, reading, updating, and deleting resources. This project is designed to demonstrate the power and efficiency of Rust for backend development.
+
+## Features
+
+- User authentication (registration and login)
+- CRUD operations for resources (e.g., items, users)
+- Token-based authentication
+- Input validation and error handling
+- Basic logging
+
+## Technologies Used
+
+- **Backend**: Rust, Actix-web
+- **Database**: SQLite
+
+## Getting Started
+
+### Prerequisites
+
+- Cargo (Rust's package manager)
+- SQLite
+
+### Installation
+
+1. Clone the repository:
+
+   ```sh
+   git clone https://github.com/wayyxyzz23/rustyapi.git
+   cd rustyapi
