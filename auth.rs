@@ -1,13 +1,12 @@
-use std::collections::HashMap;
-use std::sync::Mutex;
-use rocket::{get, post, routes};
+use argon2::{self, Config};
+use dotenv::dotenv;
+use rand::Rng;
 use rocket::http::Status;
 use rocket::serde::{json::Json, Deserialize, Serialize};
-use rocket::State;
-use argon2::{self, Config};
-use rand::Rng;
-use dotenv::dotenv;
+use rocket::{get, post, routes, State};
+use std::collections::HashMap;
 use std::env;
+use std::sync::Mutex;
 
 type Db = Mutex<HashMap<String, String>>;
 
@@ -19,24 +18,31 @@ struct User {
 
 #[post("/register", data = "<user>")]
 fn register(user: Json<User>, db: &State<Db>) -> Status {
-    let mut db = db.lock().expect("db lock.");
+    let mut db = db.lock().expect("Failed to acquire the DB lock.");
+
     if db.contains_key(&user.username) {
-        Status::Conflict
-    } else {
-        let salt: [u8; 16] = rand::thread_rng().gen();
-        let config = Config::default();
-        let hash = argon2::hash_encoded(user.password.as_bytes(), &salt, &config).unwrap();
-        db.insert(user.username.clone(), hash);
-        Status::Created
+        return Status::Conflict;
     }
+
+    let salt: [u8; 16] = rand::thread_rng().gen();
+    let config = Config::default();
+    let hash = argon2::hash_encoded(user.password.as_bytes(), &salt, &config)
+                    .expect("Failed to hash the password.");
+
+    db.insert(user.username.clone(), hash);
+
+    Status::Created
 }
 
 #[post("/login", data = "<user>")]
 fn login(user: Json<User>, db: &State<Db>) -> Status {
-    let db = db.lock().unwrap();
+    let db = db.lock().expect("Failed to acquire the DB lock.");
+
     match db.get(&user.username) {
         Some(hash) => {
-            if argon2::verify_encoded(&hash, user.password.as_bytes()).unwrap() {
+            if argon2::verify_encoded(hash, user.password.as_bytes())
+                    .expect("Password verification failed.")
+            {
                 Status::Ok
             } else {
                 Status::Forbidden
@@ -57,9 +63,12 @@ async fn main() {
 
     let db: Db = Mutex::new(HashMap::new());
 
-    let _ = rocket::build()
+    if let Err(e) = rocket::build()
         .manage(db)
         .mount("/", routes![index, register, login])
         .launch()
-        .await;
+        .await
+    {
+        println!("Server failed to launch: {}", e);
+    }
 }
