@@ -1,11 +1,12 @@
-use std::env;
-use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
 use dotenv::dotenv;
+use sqlx::{postgres::PgPoolOptions, Pool, Postgres};
+use std::env;
 
 pub async fn establish_connection() -> Pool<Postgres> {
     dotenv().ok(); // Load .env file
 
     let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    
     PgPoolOptions::new()
         .max_connections(5)
         .connect(&database_url)
@@ -21,6 +22,7 @@ pub async fn add_user(pool: &Pool<Postgres>, username: &str, password: &str) -> 
     )
     .execute(pool)
     .await?;
+    
     Ok(())
 }
 
