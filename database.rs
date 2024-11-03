@@ -5,7 +5,7 @@ use std::env;
 pub async fn establish_connection() -> Pool<Postgres> {
     dotenv().ok(); // Load .env file
 
-    let database_url = env::var("DATABASE_URL").expect("DATABASE_URL must be set");
+    let database_url = env::var("DATABASE_URL").unwrap_or_else(|_| panic!("DATABASE_URL must be set"));
     
     PgPoolOptions::new()
         .max_connections(5)
@@ -27,7 +27,8 @@ pub async fn add_user(pool: &Pool<Postgres>, username: &str, password: &str) -> 
 }
 
 pub async fn get_user(pool: &Pool<Postgres>, username: &str) -> Result<String, sqlx::Error> {
-    let row = sqlx::query!(
+    let row = sqlx::query_as!(
+        UserData, // Assuming the existence of a UserData struct for deserialization
         "SELECT password FROM users WHERE username = $1",
         username
     )
@@ -35,4 +36,8 @@ pub async fn get_user(pool: &Pool<Postgres>, username: &str) -> Result<String, s
     .await?;
 
     Ok(row.password)
+}
+
+struct UserData {
+    password: String,
 }
